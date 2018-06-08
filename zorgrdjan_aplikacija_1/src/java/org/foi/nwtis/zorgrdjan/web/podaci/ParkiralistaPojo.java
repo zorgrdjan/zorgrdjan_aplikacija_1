@@ -1,10 +1,11 @@
-
 package org.foi.nwtis.zorgrdjan.web.podaci;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+
 /**
  * Klasa sluzi iskljucivo samo za kreiranje json-zapisa
+ *
  * @author Zoran
  */
 public class ParkiralistaPojo {
@@ -24,17 +25,19 @@ public class ParkiralistaPojo {
     @SerializedName("Longitude")
     @Expose
     private String longitude;
+    @SerializedName("Kapacitet")
+    @Expose
+    private int kapacitet;
 
-    public ParkiralistaPojo(Integer id, String naziv, String adresa, String latitude, String longitude) {
+    public ParkiralistaPojo(Integer id, String naziv, String adresa, String latitude, String longitude, Integer kapacitet) {
         this.id = id;
         this.naziv = naziv;
         this.adresa = adresa;
         this.latitude = latitude;
         this.longitude = longitude;
+        this.kapacitet = kapacitet;
     }
-    
-    
-    
+
     public Integer getId() {
         return id;
     }
@@ -73,6 +76,14 @@ public class ParkiralistaPojo {
 
     public void setLongitude(String longitude) {
         this.longitude = longitude;
+    }
+
+    public int getKapacitet() {
+        return kapacitet;
+    }
+
+    public void setKapacitet(int kapacitet) {
+        this.kapacitet = kapacitet;
     }
 
 }
