@@ -21,6 +21,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.Produces;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -34,6 +35,8 @@ import org.foi.nwtis.zorgrdjan.web.podaci.ListPojo;
 import org.foi.nwtis.zorgrdjan.web.podaci.Lokacija;
 import org.foi.nwtis.zorgrdjan.web.podaci.ParkiralistaPojo;
 import org.foi.nwtis.zorgrdjan.web.slusaci.SlusacAplikacije;
+import org.foi.nwtis.zorgrdjan.ws.klijenti.GrupaWsKlijent;
+import org.foi.nwtis.zorgrdjan.ws.serveri.MeteoWS;
 
 /**
  * REST Web Service
@@ -51,6 +54,8 @@ public class ParkiralistaREST {
     BP_Konfiguracija bpk;
     String apikey;
     String gmapikey;
+    String korisnikSVN;
+    String lozinkaSVN;
 
     String odgovorOk = "OK";
     String odgovorError = "ERR";
@@ -68,54 +73,51 @@ public class ParkiralistaREST {
      * @param podaci salju se u json zapisu korisnik i lozinka
      * @return vraca podatke o svim parkiralistima
      */
-    @POST
+    @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public String postJson(String podaci) {
+    @Path("{id}/{vozila}/korisnik/{korisnik}/lozinka/{lozinka}")
+    public String getJson(@PathParam("id") String id,@PathParam("korisnik") String korisnickoIme, @PathParam("lozinka") String lozinkaKorisnik,@PathParam("vozila") String vozila) {
 
         Gson gson = new Gson();
         ListPojo lista = new ListPojo();
         String odgovor;
-        if (provjeriPoslanePodatkePostParkiralista(podaci)) {
-            if (provjeriKorisnickePodatke(podaci)) {
-                JsonObject jsonObject = new JsonParser().parse(podaci).getAsJsonObject();
-                String korisnickoIme = jsonObject.get("korisnik").toString().replace("\"", "");
-                lista.setOdgovor(getAllParkingsFromDatabase());
-                lista.setStatus(odgovorOk);
-                odgovor = gson.toJson(lista);
+            if (provjeriKorisnickePodatkeGet(korisnickoIme,lozinkaKorisnik)) {
+                GrupaWsKlijent grupa=new GrupaWsKlijent();
+                
+                String vozilaParkiralista=gson.toJson(grupa.dajSvaVozilaParkiralistaGrupe(korisnikSVN, 
+                        lozinkaSVN, Integer.parseInt(id)));
+                odgovor="{\"odgovor\": "+vozilaParkiralista+","
+                        + "\"status\": \"OK\"}"; 
                 pisiUDnevnik(korisnickoIme,
-                        "http://localhost:8084/zorgrdjan_aplikacija_1/webresources/parkiralista/",
-                        "postJson", 1);
+                        "http://localhost:8084/zorgrdjan_aplikacija_1/webresources/parkiralista/"+id+"/"+vozila+"/korisnik/"+korisnickoIme+"/lozinka/"+lozinkaKorisnik,
+                        "getJson", 1);
             } else {
                 lista.setStatus(odgovorError);
                 lista.setPoruka("Takav korisnik ne postoji!");
                 odgovor = gson.toJson(lista);
             }
 
-        } else {
-            lista.setPoruka(odgovorError);
-            lista.setStatus("Pogresno poslani parametri");
-            odgovor = gson.toJson(lista);
-        }
+        
         return odgovor;
     }
-
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("korisnik/{korisnik}/lozinka/{lozinka}")
+    @Path("/korisnik/{korisnik}/lozinka/{lozinka}")
     public String getJson(@PathParam("korisnik") String korisnickoIme, @PathParam("lozinka") String lozinkaKorisnik) {
-
+        
         System.out.println("Korisnik" + korisnickoIme);
         System.out.println("Lozinka" + lozinkaKorisnik);
         Gson gson = new Gson();
         ListPojo lista = new ListPojo();
         String odgovor;
         if (provjeriKorisnickePodatkeGet(korisnickoIme, lozinkaKorisnik)) {
+            sinkronizirajBazu();
             lista.setOdgovor(getAllParkingsFromDatabase());
             lista.setStatus(odgovorOk);
             odgovor = gson.toJson(lista);
             pisiUDnevnik(korisnickoIme,
-                    "http://localhost:8084/zorgrdjan_aplikacija_1/webresources/parkiralista/korisnik/"+korisnickoIme+"/lozinka/"+lozinkaKorisnik,
+                    "http://localhost:8084/zorgrdjan_aplikacija_1/webresources/parkiralista/korisnik/" + korisnickoIme + "/lozinka/" + lozinkaKorisnik,
                     "getJson", 1);
         } else {
             lista.setStatus(odgovorError);
@@ -125,6 +127,35 @@ public class ParkiralistaREST {
 
         return odgovor;
     }
+    
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("{id}/korisnik/{korisnik}/lozinka/{lozinka}")
+    public String getJson(@PathParam("id") String id, @PathParam("korisnik") String korisnickoIme, @PathParam("lozinka") String lozinkaKorisnik) {
+        Gson gson = new Gson();
+        ListPojo lista = new ListPojo();
+        String odgovor;
+        if (provjeriKorisnickePodatkeGet(korisnickoIme, lozinkaKorisnik)) {
+            if (provjeriParkiraliste(Integer.parseInt(id))) {
+                lista.setOdgovor(dohvatiParkiraliste(id));
+                lista.setStatus(odgovorOk);
+                odgovor = gson.toJson(lista);
+                pisiUDnevnik(korisnickoIme,
+                    "http://localhost:8084/zorgrdjan_aplikacija_1/webresources/parkiralista/"+id+"korisnik/" + korisnickoIme + "/lozinka/" + lozinkaKorisnik,
+                    "getJson", 1);
+            } else {
+                lista.setStatus(odgovorError);
+                lista.setPoruka("Parkiriraliste ne postoji!");
+                odgovor = gson.toJson(lista);
+            }
+
+        } else {
+            lista.setStatus(odgovorError);
+            lista.setPoruka("Takav korisnik ne postoji!");
+            odgovor = gson.toJson(lista);
+        }
+        return odgovor;
+    }
 
     /**
      *
@@ -132,6 +163,44 @@ public class ParkiralistaREST {
      * @param podaci salju se u json zapisu korisnik i lozinka
      * @return vraca podatke o jednom parkiralistu
      */
+//    @POST
+//    @Produces(MediaType.APPLICATION_JSON)
+//    @Consumes(MediaType.APPLICATION_JSON)
+//    @Path("{id}")
+//    public String postJson(@PathParam("id") String id, String podaci) {
+//        Gson gson = new Gson();
+//        ListPojo lista = new ListPojo();
+//        String odgovor;
+//        if (provjeriPoslanePodatkePostParkiralista(podaci)) {
+//            if (provjeriKorisnickePodatke(podaci)) {
+//                if (provjeriParkiraliste(Integer.parseInt(id))) {
+//                    JsonObject jsonObject = new JsonParser().parse(podaci).getAsJsonObject();
+//                    String korisnickoIme = jsonObject.get("korisnik").toString().replace("\"", "");
+//                    lista.setOdgovor(dohvatiParkiraliste(id));
+//                    lista.setStatus(odgovorOk);
+//                    odgovor = gson.toJson(lista);
+//                    pisiUDnevnik(korisnickoIme,
+//                            "http://localhost:8084/zorgrdjan_aplikacija_1/webresources/parkiralista/" + id,
+//                            "postJson", 1);
+//                } else {
+//                    lista.setStatus(odgovorError);
+//                    lista.setPoruka("Parkiriraliste ne postoji!");
+//                    odgovor = gson.toJson(lista);
+//                }
+//
+//            } else {
+//                lista.setStatus(odgovorError);
+//                lista.setPoruka("Takav korisnik ne postoji!");
+//                odgovor = gson.toJson(lista);
+//            }
+//
+//        } else {
+//            lista.setPoruka(odgovorError);
+//            lista.setStatus("Pogresno poslani parametri");
+//            odgovor = gson.toJson(lista);
+//        }
+//        return odgovor;
+//    }
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -140,20 +209,20 @@ public class ParkiralistaREST {
         Gson gson = new Gson();
         ListPojo lista = new ListPojo();
         String odgovor;
-        if (provjeriPoslanePodatkePostParkiralista(podaci)) {
+        if (provjeriPoslanePodatkeUpisParkiralista(podaci)) {
             if (provjeriKorisnickePodatke(podaci)) {
-                if (provjeriParkiraliste(Integer.parseInt(id))) {
+                if (!provjeriParkiraliste(Integer.parseInt(id))) {
                     JsonObject jsonObject = new JsonParser().parse(podaci).getAsJsonObject();
                     String korisnickoIme = jsonObject.get("korisnik").toString().replace("\"", "");
-                    lista.setOdgovor(dohvatiParkiraliste(id));
-                    lista.setStatus(odgovorOk);
-                    odgovor = gson.toJson(lista);
+                    dodajParkiraliste(Integer.parseInt(id), podaci);
+                    odgovor = "{\"odgovor\": [],"
+                            + "\"status\": \"OK\"} ";
                     pisiUDnevnik(korisnickoIme,
                             "http://localhost:8084/zorgrdjan_aplikacija_1/webresources/parkiralista/" + id,
                             "postJson", 1);
                 } else {
                     lista.setStatus(odgovorError);
-                    lista.setPoruka("Parkiriraliste ne postoji!");
+                    lista.setPoruka("Parkiriraliste vec postoji!");
                     odgovor = gson.toJson(lista);
                 }
 
@@ -181,10 +250,10 @@ public class ParkiralistaREST {
         String odgovor;
         if (provjeriPoslanePodatkeUpisParkiralista(podaci)) {
             if (provjeriKorisnickePodatke(podaci)) {
-                if (!provjeriParkiraliste(Integer.parseInt(id))) {
+                if (provjeriParkiraliste(Integer.parseInt(id))) {
                     JsonObject jsonObject = new JsonParser().parse(podaci).getAsJsonObject();
                     String korisnickoIme = jsonObject.get("korisnik").toString().replace("\"", "");
-                    dodajParkiraliste(Integer.parseInt(id), podaci);
+                    azurirajParkiraliste(Integer.parseInt(id), podaci);
                     odgovor = "{\"odgovor\": [],"
                             + "\"status\": \"OK\"} ";
                     pisiUDnevnik(korisnickoIme,
@@ -192,7 +261,48 @@ public class ParkiralistaREST {
                             "putJson", 1);
                 } else {
                     lista.setStatus(odgovorError);
-                    lista.setPoruka("Parkiriraliste vec postoji!");
+                    lista.setPoruka("Parkiriraliste ne postoji!");
+                    odgovor = gson.toJson(lista);
+                }
+
+            } else {
+                lista.setStatus(odgovorError);
+                lista.setPoruka("Takav korisnik ne postoji!");
+                odgovor = gson.toJson(lista);
+            }
+
+        } else {
+            lista.setPoruka(odgovorError);
+            lista.setStatus("Pogresno poslani parametri");
+            odgovor = gson.toJson(lista);
+        }
+        return odgovor;
+    }
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("{id}")
+    public String deleteJson(@PathParam("id") String id, String podaci) {
+        Gson gson = new Gson();
+        ListPojo lista = new ListPojo();
+        String odgovor;
+        if (provjeriPoslanePodatkePostParkiralista(podaci)) {
+            if (provjeriKorisnickePodatke(podaci)) {
+                if (provjeriParkiraliste(Integer.parseInt(id))) {
+                    JsonObject jsonObject = new JsonParser().parse(podaci).getAsJsonObject();
+                    String korisnickoIme = jsonObject.get("korisnik").toString().replace("\"", "");
+                    deleteMeteoPodatke(Integer.parseInt(id));
+                    deleteParkiraliste(Integer.parseInt(id));
+                    GrupaWsKlijent servis=new GrupaWsKlijent();
+                    servis.obrisiParkiralisteGrupe(korisnikSVN, lozinkaSVN, Integer.parseInt(id));
+                    odgovor = "{\"odgovor\": [],"
+                            + "\"status\": \"OK\"} ";
+                    pisiUDnevnik(korisnickoIme,
+                            "http://localhost:8084/zorgrdjan_aplikacija_1/webresources/parkiralista/" + id,
+                            "deleteJson", 1);
+                } else {
+                    lista.setStatus(odgovorError);
+                    lista.setPoruka("Parkiriraliste ne postoji!");
                     odgovor = gson.toJson(lista);
                 }
 
@@ -231,6 +341,9 @@ public class ParkiralistaREST {
         lozinka = bpk.getUserPassword();
         apikey = SlusacAplikacije.getSc().getAttribute("apikey").toString();
         gmapikey = SlusacAplikacije.getSc().getAttribute("gmapikey").toString();
+        lozinkaSVN = SlusacAplikacije.getSc().getAttribute("lozinkaSVN").toString();
+        korisnikSVN = SlusacAplikacije.getSc().getAttribute("korisnikSVN").toString();
+        
     }
 
     private List<ParkiralistaPojo> getAllParkingsFromDatabase() {
@@ -422,11 +535,15 @@ public class ParkiralistaREST {
     private void dodajParkiraliste(int id, String podaci) {
         dohvatiPodatke();
         JsonObject jsonObject = new JsonParser().parse(podaci).getAsJsonObject();
-        String naziv = jsonObject.get("naziv").toString().replace("\"", "");;
-        String adresa = jsonObject.get("adresa").toString().replace("\"", "");;
-        String kapacitet = jsonObject.get("kapacitet").toString().replace("\"", "");;
+        String naziv = jsonObject.get("naziv").toString().replace("\"", "");
+        String adresa = jsonObject.get("adresa").toString().replace("\"", "");
+        String kapacitet = jsonObject.get("kapacitet").toString().replace("\"", "");
         GMKlijent klijent = new GMKlijent(gmapikey);
         Lokacija lok = klijent.getGeoLocation(adresa);
+        GrupaWsKlijent servis=new GrupaWsKlijent();
+        servis.autenticirajGrupu(korisnikSVN, lozinkaSVN);
+        servis.dodajNovoParkiralisteGrupi(korisnikSVN, lozinkaSVN, id, naziv, adresa, Integer.parseInt(kapacitet));
+      //  servis.
         try {
             Class.forName(bpk.getDriverDatabase());
         } catch (java.lang.ClassNotFoundException e) {
@@ -478,5 +595,103 @@ public class ParkiralistaREST {
         }
         return povratnaInformacija;
     }
+
+    private void azurirajParkiraliste(int id, String podaci) {
+        dohvatiPodatke();
+        JsonObject jsonObject = new JsonParser().parse(podaci).getAsJsonObject();
+        String naziv = jsonObject.get("naziv").toString().replace("\"", "");
+        String adresa = jsonObject.get("adresa").toString().replace("\"", "");
+        String kapacitet = jsonObject.get("kapacitet").toString().replace("\"", "");
+        GMKlijent klijent = new GMKlijent(gmapikey);
+        Lokacija lok = klijent.getGeoLocation(adresa);
+        GrupaWsKlijent servis=new GrupaWsKlijent();
+        servis.autenticirajGrupu(korisnik, korisnikSVN);
+        servis.obrisiParkiralisteGrupe(korisnikSVN, lozinkaSVN, id);
+        servis.dodajNovoParkiralisteGrupi(korisnikSVN, lozinkaSVN, id, naziv, adresa, Integer.parseInt(kapacitet));
+        try {
+            Class.forName(bpk.getDriverDatabase());
+        } catch (java.lang.ClassNotFoundException e) {
+            System.err.print("ClassNotFoundException: ");
+            System.err.println(e.getMessage());
+        }
+        try {
+            System.out.println("ID=" + id);
+            con = DriverManager.getConnection(url, korisnik, lozinka);
+            stm = con.createStatement();
+            String upit1 = " UPDATE `parkiralista` SET `naziv`="
+                    + "'" + naziv + "',"
+                    + " `adresa`= '" + adresa + "',"
+                    + " `longitude`= " + Float.parseFloat(lok.getLongitude()) + ","
+                    + " `latitude`= " + Float.parseFloat(lok.getLongitude()) + ","
+                    + " `kapacitet`=" + Integer.parseInt(kapacitet) + " WHERE id=" + id;
+            stm.executeUpdate(upit1);
+            stm.close();
+            con.close();
+
+        } catch (SQLException ex) {
+            System.err.println("SQLException: " + ex.getMessage());
+        }
+    }
+
+     private void deleteMeteoPodatke(int id) {
+        dohvatiPodatke();
+        try {
+            Class.forName(bpk.getDriverDatabase());
+        } catch (java.lang.ClassNotFoundException e) {
+            System.err.print("ClassNotFoundException: ");
+            System.err.println(e.getMessage());
+        }
+        try {
+            String upit = "delete from meteo where id="+id;
+            con = DriverManager.getConnection(url, korisnik, lozinka);
+            stm = con.createStatement();
+            stm.executeUpdate(upit); 
+            stm.close();
+            con.close();
+
+        } catch (SQLException ex) {
+            Logger.getLogger(ParkiralistaREST.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+    }
+      private void deleteParkiraliste(int id) {
+       dohvatiPodatke();
+        try {
+            Class.forName(bpk.getDriverDatabase());
+        } catch (java.lang.ClassNotFoundException e) {
+            System.err.print("ClassNotFoundException: ");
+            System.err.println(e.getMessage());
+        }
+        try {
+            String upit = "delete from parkiralista where id="+id;
+            con = DriverManager.getConnection(url, korisnik, lozinka);
+            stm = con.createStatement();
+            stm.executeUpdate(upit); 
+            stm.close();
+            con.close();
+
+        } catch (SQLException ex) {
+            Logger.getLogger(ParkiralistaREST.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+      private void sinkronizirajBazu()
+      {
+          GrupaWsKlijent servis=new GrupaWsKlijent();
+          servis.autenticirajGrupu(korisnikSVN, lozinkaSVN);
+          System.out.println("Autenticirao sam grupu");
+          servis.obrisiSvaParkiralistaGrupe(korisnikSVN, lozinkaSVN);
+          System.out.println("Obrisao sam sva parkiralista");
+          List<ParkiralistaPojo> popisParkiralista=getAllParkingsFromDatabase();
+          System.out.println("Dodjem ovdje");
+          for (ParkiralistaPojo parkiralistaPojo : popisParkiralista) {
+              servis.autenticirajGrupu(korisnikSVN, lozinkaSVN);
+              servis.dodajNovoParkiralisteGrupi(korisnikSVN, 
+                      lozinkaSVN, 
+                      parkiralistaPojo.getId(),
+                      parkiralistaPojo.getNaziv(),
+                      parkiralistaPojo.getAdresa(), 
+                      parkiralistaPojo.getKapacitet());
+          }
+      }
 
 }

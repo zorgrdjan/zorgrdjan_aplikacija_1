@@ -69,5 +69,8 @@ public class SlusacAplikacije implements ServletContextListener {
         sc.setAttribute("adresaprimatelja", konf.dajPostavku("adresaprimatelja"));
         sc.setAttribute("adresaposiljatenja", konf.dajPostavku("adresaposiljatenja"));
         sc.setAttribute("gmapikey", konf.dajPostavku("gmapikey"));
+        sc.setAttribute("korisnikSVN", konf.dajPostavku("korisnikSVN"));
+        sc.setAttribute("lozinkaSVN", konf.dajPostavku("lozinkaSVN"));
+        
     }
 }
