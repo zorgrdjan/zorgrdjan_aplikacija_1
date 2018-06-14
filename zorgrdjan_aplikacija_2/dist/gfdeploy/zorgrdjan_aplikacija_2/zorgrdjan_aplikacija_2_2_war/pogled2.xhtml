@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui">
+    <h:head>
+        <title>Facelet Title</title>
+    </h:head>
+    <h:body>
+        <h:form>
+            <p:growl id="growl" life="2000" />
+            <p:commandButton value="Komanda DODAJ"  update="odgovor" actionListener="#{upravljanjeNaredbama.korisnikDodaj()}" styleClass="ui-priority-primary" />
+            <p:commandButton value="Komanda AZURIRAJ"   actionListener="#{upravljanjeNaredbama.korisnikAzuriraj()}" update="odgovor" styleClass="ui-priority-primary" />
+          
+            <p:commandButton value="Komanda Pauza" id="ajax" update="odgovor" actionListener="#{upravljanjeNaredbama.korisnikPauza()}" styleClass="ui-priority-primary" />
+            <p:commandButton value="Komanda Kreni"   actionListener="#{upravljanjeNaredbama.korisnikKreni()}" update="odgovor" styleClass="ui-priority-primary" >
+             
+            </p:commandButton>
+            <p:commandButton value="Komanda Pasivno"  actionListener="#{upravljanjeNaredbama.korisnikPasivno()}" update="odgovor" styleClass="ui-priority-primary" />
+            <p:commandButton value="Komanda Aktivno"  actionListener="#{upravljanjeNaredbama.korisnikAktivno()}" update="odgovor" styleClass="ui-priority-primary" />
+            <p:commandButton value="Komanda Stani"  actionListener="#{upravljanjeNaredbama.korisnikStani()}" update="odgovor" styleClass="ui-priority-primary" />
+            <p:commandButton value="Komanda Stanje"   actionListener="#{upravljanjeNaredbama.korisnikStanje()}" update="odgovor" styleClass="ui-priority-primary" />
+            <p:commandButton value="Komanda listaj"   actionListener="#{upravljanjeNaredbama.korisnikListaj()}" update="odgovor" styleClass="ui-priority-primary" />
+            <br></br>
+            <p:commandButton value="Komanda Grupa Dodaj"  actionListener="#{upravljanjeNaredbama.grupaDodaj()}" update="odgovor" styleClass="ui-priority-primary" />
+            <p:commandButton value="Komanda Grupa Prekid"  actionListener="#{upravljanjeNaredbama.grupaPrekid()}" update="odgovor" styleClass="ui-priority-primary" />
+            <p:commandButton value="Komanda Grupa Kreni"  actionListener="#{upravljanjeNaredbama.grupaKreni()}" update="odgovor" styleClass="ui-priority-primary" />
+            <p:commandButton value="Komanda Grupa Pauza"   actionListener="#{upravljanjeNaredbama.grupaPauza()}" update="odgovor" styleClass="ui-priority-primary" />
+            <p:commandButton value="Komanda Grupa stanje"   actionListener="#{upravljanjeNaredbama.grupaStanje()}" update="odgovor" styleClass="ui-priority-primary" />
+            <p:commandButton value="Pisi u dnevnik neki zapis"   actionListener="#{upravljanjeNaredbama.pisiUDnevnik()}" update="odgovor" styleClass="ui-priority-primary" />
+           
+            <br></br>
+            <p:outputLabel id="odgovor" value="#{upravljanjeNaredbama.odgovorServera}"></p:outputLabel>
+        </h:form>
+    </h:body>
+</html>
+

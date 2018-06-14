@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+<comment>NWTIS konfiguracija - JavaDB</comment>
+<entry key="server.database">jdbc:mysql://127.0.0.1/</entry>
+<entry key="admin.username">nwtis_g3</entry>
+<entry key="admin.password">g3_nwtis</entry>
+<entry key="admin.database">nwtis_g3</entry>
+<entry key="user.username">nwtis_g3</entry>
+<entry key="user.password">g3_nwtis</entry>
+<entry key="user.database">nwtis_zorgrdjan_bp_1</entry>
+<entry key="driver.database.odbc">sun.jdbc.odbc.JdbcOdbcDriver</entry>
+<entry key="driver.database.mysql">com.mysql.jdbc.Driver</entry>
+<entry key="driver.database.derby">org.apache.derby.jdbc.ClientDriver</entry>
+<entry key="driver.database.postgresql">org.postgresql.Driver</entry>
+<entry key="intervalDretveZaMeteoPodatke">600</entry>
+<entry key="adresaprimatelja">servis@nwtis.nastava.foi.hr</entry>
+<entry key="predmetporuke">NWTIS_PROJEKT</entry>
+<entry key="adresaposiljatenja">zoran.grdan@gmail.com</entry>
+<entry key="lozinkaSVN">b5pp4rkn</entry>
+<entry key="korisnikSVN">zorgrdjan</entry>
+<entry key="apikey">a63542e7e6723fa9ab6c1f9e5c9909a9</entry>
+<entry key="gmapikey">AIzaSyAa8d0zyXJCA7T0xq-aIc8oxw3XKSiiUMk</entry>
+<entry key="stranicenje">10</entry>
+<entry key="port">8000</entry>
+<entry key="mail.server">127.0.0.1</entry>
+<entry key="mail.attachmentFilename">NWTiS_privitak.json</entry>
+</properties>
