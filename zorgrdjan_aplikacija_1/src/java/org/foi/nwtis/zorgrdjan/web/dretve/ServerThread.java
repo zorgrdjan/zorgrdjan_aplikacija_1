@@ -49,8 +49,6 @@ public class ServerThread extends Thread {
     public void run() {
         System.out.println("Pokrecem pozadinsku dretvu za preuzimanje geo meteo podataka!");
         intervalDretveZaMeteoPodatke=Integer.parseInt(servletContext.getAttribute("intervalDretveZaMeteoPodatke").toString())*1000;
-        serverSocketThread = new ServerSocketThread(servletContext);
-        serverSocketThread.start();
         System.out.println("Interval za dretvu:"+intervalDretveZaMeteoPodatke);
         while (runThread) {
 //            if (serverSocketThread.weatherDataPicker)

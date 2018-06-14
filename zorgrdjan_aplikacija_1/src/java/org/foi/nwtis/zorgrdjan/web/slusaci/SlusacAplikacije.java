@@ -5,6 +5,9 @@
  */
 package org.foi.nwtis.zorgrdjan.web.slusaci;
 
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -13,6 +16,7 @@ import org.foi.nwtis.zorgrdjan.konfiguracije.KonfiguracijaApstraktna;
 import org.foi.nwtis.zorgrdjan.konfiguracije.NeispravnaKonfiguracija;
 import org.foi.nwtis.zorgrdjan.konfiguracije.NemaKonfiguracije;
 import org.foi.nwtis.zorgrdjan.konfiguracije.bp.BP_Konfiguracija;
+import org.foi.nwtis.zorgrdjan.web.dretve.ServerSocketThread;
 import org.foi.nwtis.zorgrdjan.web.dretve.ServerThread;
 
 /**
@@ -23,7 +27,9 @@ import org.foi.nwtis.zorgrdjan.web.dretve.ServerThread;
 public class SlusacAplikacije implements ServletContextListener {
 
     private ServerThread serverThread;
+    private ServerSocketThread serverSocketThread;
     private static ServletContext sc;
+
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         sc = sce.getServletContext();
@@ -36,10 +42,10 @@ public class SlusacAplikacije implements ServletContextListener {
         try {
             Konfiguracija konf = KonfiguracijaApstraktna.preuzmiKonfiguraciju(putanja + datoteka);
             preuzmiKonfiguraciju(sc, konf);
-            //       ObradaPoruka obrada=new ObradaPoruka(konf,bpk);
-            //       obrada.start();
             serverThread = new ServerThread(sc);
             serverThread.start();
+            serverSocketThread = new ServerSocketThread(sc);
+            serverSocketThread.start();
         } catch (NemaKonfiguracije | NeispravnaKonfiguracija ex) {
             //  Logger.getLogger(ObradaPoruka.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -58,7 +64,12 @@ public class SlusacAplikacije implements ServletContextListener {
         ServletContext sc = sce.getServletContext();
         sc.removeAttribute("BP_Konfig");
         serverThread.runThread = false;
-        serverThread.serverSocketThread.runServerSocket = false;
+        serverSocketThread.runServerSocket = false;
+        try {
+            serverSocketThread.serverSocket.close();
+        } catch (IOException ex) {
+            Logger.getLogger(SlusacAplikacije.class.getName()).log(Level.SEVERE, null, ex);
+        }
         System.out.println("Dretve su ugasene!");
     }
 
@@ -71,6 +82,10 @@ public class SlusacAplikacije implements ServletContextListener {
         sc.setAttribute("gmapikey", konf.dajPostavku("gmapikey"));
         sc.setAttribute("korisnikSVN", konf.dajPostavku("korisnikSVN"));
         sc.setAttribute("lozinkaSVN", konf.dajPostavku("lozinkaSVN"));
-        
+        sc.setAttribute("stranicenje", konf.dajPostavku("stranicenje"));
+        sc.setAttribute("port", konf.dajPostavku("port"));
+        sc.setAttribute("mail.server", konf.dajPostavku("mail.server"));
+        sc.setAttribute("mail.attachmentFilename", konf.dajPostavku("mail.attachmentFilename"));
+
     }
 }
